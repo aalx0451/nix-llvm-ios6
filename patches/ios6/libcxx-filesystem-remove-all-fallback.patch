@@ -1,0 +1,14 @@
+diff --git a/libcxx/src/filesystem/operations.cpp b/libcxx/src/filesystem/operations.cpp
+index 745db87ce..c337f6155 100644
+--- a/libcxx/src/filesystem/operations.cpp
++++ b/libcxx/src/filesystem/operations.cpp
+@@ -818,7 +818,9 @@ bool __remove(const path& p, error_code* ec) {
+ //
+ // The second implementation is used on platforms where `openat()` & friends are available,
+ // and it threads file descriptors through recursive calls to avoid such race conditions.
+-#if defined(_LIBCPP_WIN32API) || defined(__MVS__)
++#if defined(_LIBCPP_WIN32API) || defined(__MVS__) || !defined(AT_FDCWD) || \
++    (defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) && __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 80000) || \
++    (defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) && __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101000)
+ #  define REMOVE_ALL_USE_DIRECTORY_ITERATOR
+ #endif

@@ -1,0 +1,13 @@
+diff --git a/llvm/lib/Support/Unix/Path.inc b/llvm/lib/Support/Unix/Path.inc
+index fc71ca46d..0aebf7b0e 100644
+--- a/llvm/lib/Support/Unix/Path.inc
++++ b/llvm/lib/Support/Unix/Path.inc
+@@ -1579,7 +1579,7 @@ namespace fs {
+ std::error_code copy_file(const Twine &From, const Twine &To) {
+   std::string FromS = From.str();
+   std::string ToS = To.str();
+-#if __has_builtin(__builtin_available)
++#if __has_builtin(__builtin_available) && __has_include(<sys/clonefile.h>)
+   if (__builtin_available(macos 10.12, *)) {
+     // Optimistically try to use clonefile() and handle errors, rather than
+     // calling stat() to see if it'll work.

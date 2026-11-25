@@ -1,0 +1,12 @@
+--- a/llvm/lib/TargetParser/Host.cpp
++++ b/llvm/lib/TargetParser/Host.cpp
+@@ -2540,5 +2540,7 @@
+ static Triple withHostArch(Triple T) {
+ #if defined(__arm__)
+-  T.setArch(Triple::arm);
+-  T.setArchName("arm");
++  if (T.getArch() != Triple::arm && T.getArch() != Triple::thumb) {
++    T.setArch(Triple::arm);
++    T.setArchName("arm");
++  }
+ #elif defined(__arm64e__)

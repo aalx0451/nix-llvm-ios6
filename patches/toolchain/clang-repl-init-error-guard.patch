@@ -1,0 +1,15 @@
+--- a/clang/lib/Interpreter/Interpreter.cpp
++++ b/clang/lib/Interpreter/Interpreter.cpp
+@@ -265,6 +265,12 @@
+   if (ErrOut)
+     return;
+   CI->ExecuteAction(*Act);
++  if (!CI->hasSema()) {
++    ErrOut = llvm::make_error<llvm::StringError>(
++        "Failed to initialize incremental compiler",
++        llvm::errc::invalid_argument);
++    return;
++  }
+ 
+   IncrParser =
+       std::make_unique<IncrementalParser>(*CI, Act.get(), ErrOut, PTUs);

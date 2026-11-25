@@ -1,0 +1,89 @@
+diff --git a/lib/Basic/Targets/OSTargets.h b/lib/Basic/Targets/OSTargets.h
+index 04608649a..d753026f6 100644
+--- a/lib/Basic/Targets/OSTargets.h
++++ b/lib/Basic/Targets/OSTargets.h
+@@ -81,27 +81,7 @@ public:
+     // combinations.
+     this->TLSSupported = false;
+ 
+-    if (Triple.isMacOSX())
+-      this->TLSSupported = !Triple.isMacOSXVersionLT(10, 7);
+-    else if (Triple.isiOS()) {
+-      // 64-bit iOS supported it from 8 onwards, 32-bit device from 9 onwards,
+-      // 32-bit simulator from 10 onwards.
+-      if (Triple.isArch64Bit())
+-        this->TLSSupported = !Triple.isOSVersionLT(8);
+-      else if (Triple.isArch32Bit()) {
+-        if (!Triple.isSimulatorEnvironment())
+-          this->TLSSupported = !Triple.isOSVersionLT(9);
+-        else
+-          this->TLSSupported = !Triple.isOSVersionLT(10);
+-      }
+-    } else if (Triple.isWatchOS()) {
+-      if (!Triple.isSimulatorEnvironment())
+-        this->TLSSupported = !Triple.isOSVersionLT(2);
+-      else
+-        this->TLSSupported = !Triple.isOSVersionLT(3);
+-    } else if (Triple.isDriverKit()) {
+-      // No TLS on DriverKit.
+-    } else if (Triple.isXROS())
++    if (Triple.isMacOSX() || Triple.isiOS() || Triple.isWatchOS() || Triple.isXROS())
+       this->TLSSupported = true;
+ 
+     this->MCountName = "\01mcount";
+diff --git a/lib/CodeGen/ItaniumCXXABI.cpp b/lib/CodeGen/ItaniumCXXABI.cpp
+--- a/lib/CodeGen/ItaniumCXXABI.cpp
++++ b/lib/CodeGen/ItaniumCXXABI.cpp
+@@ -2926,7 +2926,9 @@
+   const char *Name = "__cxa_atexit";
+   if (TLS) {
+     const llvm::Triple &T = CGF.getTarget().getTriple();
+-    Name = T.isOSDarwin() ?  "_tlv_atexit" : "__cxa_thread_atexit";
++    Name = (T.isOSDarwin() && !CGF.CGM.getCodeGenOpts().EmulatedTLS)
++               ? "_tlv_atexit"
++               : "__cxa_thread_atexit";
+   }
+ 
+   // We're assuming that the destructor function is something we can
+@@ -3121,8 +3123,9 @@
+   assert(!VD->isStaticLocal() && "static local VarDecls don't need wrappers!");
+   // Darwin prefers to have references to thread local variables to go through
+   // the thread wrapper instead of directly referencing the backing variable.
+-  return VD->getTLSKind() == VarDecl::TLS_Dynamic &&
+-         CGM.getTarget().getTriple().isOSDarwin();
++  return CGM.getTarget().getTriple().isOSDarwin() &&
++         (VD->getTLSKind() == VarDecl::TLS_Dynamic ||
++          CGM.getCodeGenOpts().EmulatedTLS);
+ }
+ 
+ /// Get the appropriate linkage for the wrapper function. This is essentially
+@@ -3185,7 +3188,8 @@
+         VD->getVisibility() == HiddenVisibility)
+       Wrapper->setVisibility(llvm::GlobalValue::HiddenVisibility);
+ 
+-  if (isThreadWrapperReplaceable(VD, CGM)) {
++  if (isThreadWrapperReplaceable(VD, CGM) &&
++      !CGM.getCodeGenOpts().EmulatedTLS) {
+     Wrapper->setCallingConv(llvm::CallingConv::CXX_FAST_TLS);
+     Wrapper->addFnAttr(llvm::Attribute::NoUnwind);
+   }
+@@ -3234,7 +3238,8 @@
+     CodeGenFunction(CGM).GenerateCXXGlobalInitFunc(
+         InitFunc, OrderedInits, ConstantAddress(Guard, CGM.Int8Ty, GuardAlign));
+     // On Darwin platforms, use CXX_FAST_TLS calling convention.
+-    if (CGM.getTarget().getTriple().isOSDarwin()) {
++    if (CGM.getTarget().getTriple().isOSDarwin() &&
++        !CGM.getCodeGenOpts().EmulatedTLS) {
+       InitFunc->setCallingConv(llvm::CallingConv::CXX_FAST_TLS);
+       InitFunc->addFnAttr(llvm::Attribute::NoUnwind);
+     }
+@@ -3354,7 +3359,8 @@
+     } else if (InitIsInitFunc) {
+       if (Init) {
+         llvm::CallInst *CallVal = Builder.CreateCall(InitFnTy, Init);
+-        if (isThreadWrapperReplaceable(VD, CGM)) {
++        if (isThreadWrapperReplaceable(VD, CGM) &&
++            !CGM.getCodeGenOpts().EmulatedTLS) {
+           CallVal->setCallingConv(llvm::CallingConv::CXX_FAST_TLS);
+           llvm::Function *Fn =
+               cast<llvm::Function>(cast<llvm::GlobalAlias>(Init)->getAliasee());

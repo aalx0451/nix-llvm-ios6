@@ -1,0 +1,29 @@
+--- a/clang/lib/Driver/ToolChains/Darwin.cpp
++++ b/clang/lib/Driver/ToolChains/Darwin.cpp
+@@ -1422,10 +1422,25 @@
+   CXXStdlibType Type = GetCXXStdlibType(Args);
+ 
+   switch (Type) {
+-  case ToolChain::CST_Libcxx:
++  case ToolChain::CST_Libcxx: {
++    if (getTriple().isiOS() &&
++        getTriple().getEnvironment() != llvm::Triple::Simulator &&
++        (getTriple().getArch() == llvm::Triple::arm ||
++         getTriple().getArch() == llvm::Triple::thumb)) {
++      llvm::SmallString<128> InstallLib(getDriver().Dir);
++      llvm::sys::path::append(InstallLib, "..", "lib");
++      llvm::SmallString<128> LibCxx(InstallLib);
++      llvm::sys::path::append(LibCxx, "libc++.dylib");
++      if (getVFS().exists(LibCxx)) {
++        CmdArgs.push_back(Args.MakeArgString(llvm::Twine("-L") + InstallLib));
++        CmdArgs.push_back("-rpath");
++        CmdArgs.push_back(Args.MakeArgString(InstallLib));
++      }
++    }
+     CmdArgs.push_back("-lc++");
+     if (Args.hasArg(options::OPT_fexperimental_library))
+       CmdArgs.push_back("-lc++experimental");
+     break;
++  }
+ 
+   case ToolChain::CST_Libstdcxx:

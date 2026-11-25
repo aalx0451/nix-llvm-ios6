@@ -1,0 +1,15 @@
+--- a/llvm/lib/ExecutionEngine/RuntimeDyld/RuntimeDyldImpl.h
++++ b/llvm/lib/ExecutionEngine/RuntimeDyld/RuntimeDyldImpl.h
+@@ -544,8 +544,11 @@
+     for (const auto &KV : GlobalSymbolTable) {
+       auto SectionID = KV.second.getSectionID();
+       uint64_t SectionAddr = getSectionLoadAddress(SectionID);
++      uint64_t TargetAddr =
++          modifyAddressBasedOnFlags(SectionAddr + KV.second.getOffset(),
++                                    KV.second.getFlags());
+       Result[KV.first()] =
+-        JITEvaluatedSymbol(SectionAddr + KV.second.getOffset(), KV.second.getFlags());
++        JITEvaluatedSymbol(TargetAddr, KV.second.getFlags());
+     }
+ 
+     return Result;

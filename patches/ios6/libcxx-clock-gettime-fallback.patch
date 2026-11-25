@@ -1,0 +1,68 @@
+diff --git a/libcxx/src/chrono.cpp b/libcxx/src/chrono.cpp
+index 20387ea76..0e77d090c 100644
+--- a/libcxx/src/chrono.cpp
++++ b/libcxx/src/chrono.cpp
+@@ -23,6 +23,10 @@
+ #include "include/apple_availability.h"
+ #include <time.h> // clock_gettime and CLOCK_{MONOTONIC,REALTIME,MONOTONIC_RAW}
+ 
++#if defined(__APPLE__)
++#  include <mach/mach_time.h>
++#endif
++
+ #if __has_include(<unistd.h>)
+ #  include <unistd.h> // _POSIX_TIMERS
+ #endif
+@@ -42,6 +46,12 @@
+ #  define _LIBCPP_HAS_CLOCK_GETTIME
+ #endif
+ 
++#if defined(__APPLE__) && \
++    ((defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) && __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 100000) || \
++     (defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) && __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101200))
++#  undef _LIBCPP_HAS_CLOCK_GETTIME
++#endif
++
+ #if defined(_LIBCPP_WIN32API)
+ #  define WIN32_LEAN_AND_MEAN
+ #  define VC_EXTRA_LEAN
+@@ -178,10 +188,22 @@ system_clock::time_point system_clock::from_time_t(time_t t) noexcept { return s
+ // also counts cycles when the system is asleep. Thus, it is the only
+ // acceptable implementation of steady_clock.
+ static steady_clock::time_point __libcpp_steady_clock_now() {
++#  if defined(_LIBCPP_HAS_CLOCK_GETTIME)
+   struct timespec tp;
+   if (0 != clock_gettime(CLOCK_MONOTONIC_RAW, &tp))
+     std::__throw_system_error(errno, "clock_gettime(CLOCK_MONOTONIC_RAW) failed");
+   return steady_clock::time_point(seconds(tp.tv_sec) + nanoseconds(tp.tv_nsec));
++#  else
++  static const mach_timebase_info_data_t __tb = []() {
++    mach_timebase_info_data_t info;
++    (void)mach_timebase_info(&info);
++    return info;
++  }();
++  uint64_t __t = mach_absolute_time();
++  if (__tb.numer != __tb.denom)
++    __t = (__t / __tb.denom) * __tb.numer + ((__t % __tb.denom) * __tb.numer) / __tb.denom;
++  return steady_clock::time_point(steady_clock::duration(static_cast<steady_clock::rep>(__t)));
++#  endif
+ }
+ 
+ #  elif defined(_LIBCPP_WIN32API)
+diff --git a/libcxx/src/filesystem/filesystem_clock.cpp b/libcxx/src/filesystem/filesystem_clock.cpp
+index 49f65efb5..fe52ff8f9 100644
+--- a/libcxx/src/filesystem/filesystem_clock.cpp
++++ b/libcxx/src/filesystem/filesystem_clock.cpp
+@@ -41,6 +41,12 @@
+ #  define _LIBCPP_HAS_CLOCK_GETTIME
+ #endif
+ 
++#if defined(__APPLE__) && \
++    ((defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) && __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 100000) || \
++     (defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) && __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101200))
++#  undef _LIBCPP_HAS_CLOCK_GETTIME
++#endif
++
+ _LIBCPP_BEGIN_NAMESPACE_FILESYSTEM
+ 
+ _LIBCPP_DIAGNOSTIC_PUSH

@@ -1,0 +1,24 @@
+diff --git a/libcxx/src/include/aligned_alloc.h b/libcxx/src/include/aligned_alloc.h
+index 24ca26ce0..a3089a3c7 100644
+--- a/libcxx/src/include/aligned_alloc.h
++++ b/libcxx/src/include/aligned_alloc.h
+@@ -31,7 +31,9 @@ inline _LIBCPP_HIDE_FROM_ABI void* __libcpp_aligned_alloc(std::size_t __alignmen
+   return ::_aligned_malloc(__size, __alignment);
+ 
+ // Android only provides aligned_alloc when targeting API 28 or higher.
+-#  elif !defined(__ANDROID__) || __ANDROID_API__ >= 28
++#  elif (!defined(__ANDROID__) || __ANDROID_API__ >= 28) && \
++        (!defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) || __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ >= 110000) && \
++        (!defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) || __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 101500)
+   // aligned_alloc() requires that __size is a multiple of __alignment,
+   // but for C++ [new.delete.general], only states "if the value of an
+   // alignment argument passed to any of these functions is not a valid
+@@ -44,6 +46,8 @@ inline _LIBCPP_HIDE_FROM_ABI void* __libcpp_aligned_alloc(std::size_t __alignmen
+   return ::aligned_alloc(__alignment, __size > __rounded_size ? __size : __rounded_size);
+ #  else
+   void* __result = nullptr;
++  if (__alignment < sizeof(void*))
++    __alignment = sizeof(void*);
+   (void)::posix_memalign(&__result, __alignment, __size);
+   // If posix_memalign fails, __result is unmodified so we still return `nullptr`.
+   return __result;

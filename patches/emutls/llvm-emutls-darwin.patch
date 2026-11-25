@@ -1,0 +1,16 @@
+diff --git a/include/llvm/TargetParser/Triple.h b/include/llvm/TargetParser/Triple.h
+index 9c83abeeb..8d788789c 100644
+--- a/include/llvm/TargetParser/Triple.h
++++ b/include/llvm/TargetParser/Triple.h
+@@ -1209,7 +1209,10 @@ public:
+   /// Note: Android API level 29 (10) introduced ELF TLS.
+   bool hasDefaultEmulatedTLS() const {
+     return (isAndroid() && isAndroidVersionLT(29)) || isOSOpenBSD() ||
+-           isWindowsCygwinEnvironment() || isOHOSFamily();
++           isWindowsCygwinEnvironment() || isOHOSFamily() ||
++           (isMacOSX() && isMacOSXVersionLT(10, 7)) ||
++           (isiOS() && isOSVersionLT(isArch64Bit() ? 8 : (isSimulatorEnvironment() ? 10 : 9))) ||
++           (isWatchOS() && isOSVersionLT(isSimulatorEnvironment() ? 3 : 2));
+   }
+ 
+   /// True if the target uses TLSDESC by default.

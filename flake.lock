@@ -1,0 +1,62 @@
+{
+  "nodes": {
+    "cctools-port": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794154887,
+        "narHash": "sha256-aX2ZXKgJJsdswRjbNf9ZzWbzyqWDHYt5tMYZRdfcgzo=",
+        "owner": "tpoechtrager",
+        "repo": "cctools-port",
+        "rev": "ef969083aecf77dee1814d6961a06b88af23edef",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tpoechtrager",
+        "repo": "cctools-port",
+        "type": "github"
+      }
+    },
+    "llvm-project-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781562833,
+        "narHash": "sha256-SF7wFuh4kXZTytpdgX7vUZItKtRobnVICm+ixze4iG0=",
+        "owner": "llvm",
+        "repo": "llvm-project",
+        "rev": "ca7933e47d3a3451d81e72ac174dcb5aa28b59d1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "llvm",
+        "ref": "llvmorg-22.1.8",
+        "repo": "llvm-project",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1795234589,
+        "narHash": "sha256-f/VVvxf5RsQgWVhUtefoca5ktVg0DA2bnkMOcmSnozo=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "2786a2a72088ecf32aea5b3ec52099e6a7cff78f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "cctools-port": "cctools-port",
+        "llvm-project-src": "llvm-project-src",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

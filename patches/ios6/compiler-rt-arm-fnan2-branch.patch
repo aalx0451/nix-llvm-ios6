@@ -1,0 +1,52 @@
+diff --git a/compiler-rt/lib/builtins/arm/divsf3.S b/compiler-rt/lib/builtins/arm/divsf3.S
+index faabd8225..df59cd7e9 100644
+--- a/compiler-rt/lib/builtins/arm/divsf3.S
++++ b/compiler-rt/lib/builtins/arm/divsf3.S
+@@ -425,9 +425,9 @@ LOCAL_LABEL(inf_NaN):
+   // input.
+   mov     r12, #0xFF000000
+   cmp     r12, r0, lsl #1       // if (r0 << 1) > 0xFF000000, r0 is a NaN
+-  blo     SYMBOL_NAME(__compiler_rt_fnan2)
++  blo     LOCAL_LABEL(call_fnan2)
+   cmp     r12, r1, lsl #1
+-  blo     SYMBOL_NAME(__compiler_rt_fnan2)
++  blo     LOCAL_LABEL(call_fnan2)
+ 
+   // No NaNs, so we have three options: inf/inf = NaN, inf/finite = inf, and
+   // finite/inf = 0.
+@@ -449,6 +449,9 @@ LOCAL_LABEL(inf_NaN):
+   and     r0, r0, #0x80000000   // throw away everything else
+   bx      lr
+ 
++LOCAL_LABEL(call_fnan2):
++  b       SYMBOL_NAME(__compiler_rt_fnan2)
++
+ LOCAL_LABEL(divbyzero):
+   // Here, we know y is zero. But we don't know if x is zero or nonzero. So we
+   // might be calculating 0/0 (invalid operation, generating a NaN), or
+diff --git a/compiler-rt/lib/builtins/arm/mulsf3.S b/compiler-rt/lib/builtins/arm/mulsf3.S
+index 346d3ed37..13a2c1687 100644
+--- a/compiler-rt/lib/builtins/arm/mulsf3.S
++++ b/compiler-rt/lib/builtins/arm/mulsf3.S
+@@ -298,9 +298,9 @@ LOCAL_LABEL(inf_NaN):
+   // returns NaN again.
+   mov     r12, #0xFF000000
+   cmp     r12, r0, lsl #1          // if (r0 << 1) > 0xFF000000, r0 is a NaN
+-  blo     SYMBOL_NAME(__compiler_rt_fnan2)
++  blo     LOCAL_LABEL(call_fnan2)
+   cmp     r12, r1, lsl #1
+-  blo     SYMBOL_NAME(__compiler_rt_fnan2)
++  blo     LOCAL_LABEL(call_fnan2)
+ 
+   // NaNs are dealt with, so now we have at least one infinity. Check if the
+   // other operand is 0. This is conveniently done by XORing the two: because
+@@ -314,6 +314,9 @@ LOCAL_LABEL(inf_NaN):
+   orreq   r0, r0, #0x400000        // otherwise, set the 'quiet NaN' bit
+   bx      lr                       // and return
+ 
++LOCAL_LABEL(call_fnan2):
++  b       SYMBOL_NAME(__compiler_rt_fnan2)
++
+ END_COMPILERRT_FUNCTION(__aeabi_fmul)
+ 
+ NO_EXEC_STACK_DIRECTIVE
